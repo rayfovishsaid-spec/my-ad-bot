@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdPartner Pro — Автоматический Telegram-бот рекламы и партнёрской сети</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: #111827;
+      --panel-2: #1e293b;
+      --border: #283548;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #6366f1;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --tg-bg: #0e1621;
+      --tg-msg: #182533;
+      --tg-btn: #2b5278;
+      --tg-btn-hover: #356594;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .topbar {
+      background: rgba(17, 24, 39, 0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+    }
+    .brand h1 { font-size: 17px; font-weight: 700; }
+    .brand p { font-size: 12px; color: var(--muted); }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 12px 20px 0;
+      max-width: 1320px;
+      margin: 0 auto;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: var(--panel);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); border-color: #3b4d66; }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(56,189,248,0.18), rgba(99,102,241,0.22));
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 18px 20px 48px;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Grid layouts */
+    .sim-layout {
+      display: grid;
+      grid-template-columns: 410px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .sim-layout { grid-template-columns: 1fr; }
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 860px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .kpi-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .kpi-val { font-size: 25px; font-weight: 800; letter-spacing: -0.02em; }
+    .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .text-green { color: #34d399; }
+    .text-accent { color: #38bdf8; }
+    .text-amber { color: #fbbf24; }
+
+    /* Telegram Phone Simulator */
+    .phone-frame {
+      background: #090f17;
+      border: 2px solid #2a394c;
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    }
+    .tg-header {
+      background: #17212b;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      border-bottom: 1px solid #0e1621;
+    }
+    .tg-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2AABEE, #229ED9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .tg-header-info h3 { font-size: 14px; font-weight: 700; }
+    .tg-header-info span { font-size: 11px; color: #5eb5f7; }
+
+    .tg-screen {
+      background: var(--tg-bg);
+      min-height: 380px;
+      max-height: 460px;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .tg-bubble {
+      background: var(--tg-msg);
+      border-radius: 14px 14px 14px 4px;
+      padding: 12px 14px;
+      font-size: 13.5px;
+      line-height: 1.48;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .tg-bubble code {
+      background: rgba(0,0,0,0.32);
+      padding: 2px 6px;
+      border-radius: 5px;
+      color: #7dd3fc;
+      font-size: 12.5px;
+    }
+    .tg-native-ad {
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px dashed rgba(255,255,255,0.14);
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .tg-native-ad a { color: #38bdf8; text-decoration: none; font-weight: 600; }
+    .tg-inline-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .tg-inline-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 5px;
+    }
+    .tg-ibtn {
+      background: rgba(43, 82, 120, 0.78);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .tg-ibtn:hover { background: var(--tg-btn-hover); }
+    .tg-ibtn.green { background: rgba(16, 185, 129, 0.32); border: 1px solid rgba(16, 185, 129, 0.45); }
+    .tg-reply-kb {
+      background: #17212b;
+      padding: 10px;
+      border-top: 1px solid #222f3d;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .tg-rbtn {
+      background: #242f3d;
+      color: #f8fafc;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .tg-rbtn:hover { background: #2f3e50; }
+
+    /* Buttons & Inputs */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 15px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      text-decoration: none;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: linear-gradient(135deg, #0ea5e9, #4f46e5); color: #fff; }
+    .btn-success { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #34d399; }
+    .btn-danger { background: rgba(239,68,68,0.16); border-color: rgba(239,68,68,0.45); color: #f87171; }
+    .btn-outline { background: var(--panel-2); border-color: var(--border); color: var(--text); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
+
+    .input, select {
+      width: 100%;
+      background: #0b1324;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input:focus, select:focus { border-color: var(--accent); }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td {
+      padding: 10px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-active { background: rgba(16,185,129,0.18); color: #34d399; }
+    .badge-pending { background: rgba(245,158,11,0.2); color: #fbbf24; }
+    .badge-paused { background: rgba(148,163,184,0.2); color: #cbd5e1; }
+
+    .toast {
+      padding: 11px 14px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+      display: none;
+    }
+    .toast.error {
+      background: rgba(239, 68, 68, 0.16);
+      border-color: rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+    }
+    .step-box {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+    .step-num {
+      display: inline-flex;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #0b1120;
+      font-weight: 800;
+      font-size: 13px;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8px;
+    }
+    .progress-bar {
+      height: 6px;
+      background: #1e293b;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #10b981);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">AP</div>
+      <div>
+        <h1>AdPartner Pro — Авто-Биржа Рекламы & Партнёрская Сеть</h1>
+        <p>Готовый Telegram-бот под ключ: Автопродвижение 24/7 • Telegram Stars + СБП • 3 уровня партнёров</p>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <div id="botStatusBadge" class="status-pill">
+        <span class="dot"></span>
+        <span id="botStatusText">Ядро активно (Симулятор + БД онлайн)</span>
+      </div>
+      <a href="/api/download-zip" class="btn btn-primary">📦 Скачать готовый ZIP бота</a>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('sim', this)">📱 Живой Симулятор Бота</button>
+    <button class="tab-btn" onclick="switchTab('admin', this)">👑 Админка и Сейф Прибыли</button>
+    <button class="tab-btn" onclick="switchTab('partners', this)">🤝 Партнёрская Сеть (3 ур.)</button>
+    <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ Проценты, Цены и СБП</button>
+    <button class="tab-btn" onclick="switchTab('launch', this)">🚀 Запуск в Telegram за 5 минут</button>
+  </nav>
+
+  <main class="container">
+    <div id="globalToast" class="toast"></div>
+
+    <!-- ==================== ВКЛАДКА 1: СИМУЛЯТОР ==================== -->
+    <section id="tab-sim" class="tab-panel active">
+      <div class="sim-layout">
+        <!-- Левая колонка: экран смартфона с ботом -->
+        <div>
+          <div style="margin-bottom:10px; display:flex; gap:8px; align-items:center;">
+            <span style="font-size:12px; color:var(--muted); white-space:nowrap;">Тестировать от лица:</span>
+            <select id="simUserSelect" onchange="onSimUserChange()">
+              <option value="777000111">👤 Алексей (Партнёр ранга «Актив»)</option>
+              <option value="200000005">👷 Дмитрий (Реферал 3-й линии Алексея)</option>
+              <option value="200000002">📣 Ставрополь Live (Рекламодатель 1-й линии)</option>
+            </select>
+          </div>
+
+          <div class="phone-frame">
+            <div class="tg-header">
+              <div class="tg-avatar">🤖</div>
+              <div class="tg-header-info">
+                <h3 id="tgBotTitle">@AdPartnerPro_Bot</h3>
+                <span>бот • автоматическая биржа и партнёрка</span>
+              </div>
+            </div>
+
+            <div class="tg-screen" id="tgScreen">
+              <!-- Динамический рендер экрана бота -->
+            </div>
+
+            <div class="tg-reply-kb">
+              <button class="tg-rbtn" onclick="renderBotScreen('earn')">💰 Заработать</button>
+              <button class="tg-rbtn" onclick="renderBotScreen('adv')">🚀 Продвижение</button>
+              <button class="tg-rbtn" onclick="renderBotScreen('partners')">🤝 Партнёрская сеть</button>
+              <button class="tg-rbtn" onclick="renderBotScreen('wallet')">👤 Кабинет и Кошелёк</button>
+              <button class="tg-rbtn" onclick="simDo('daily_bonus')">🎁 Ежедневный бонус</button>
+              <button class="tg-rbtn" onclick="renderBotScreen('voucher')">🎫 Активировать чек</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Правая колонка: живой инспектор потоков денег -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="card">
+            <div class="card-title">
+              <span>⚡ Живой монитор автоматизации (реальная SQLite база бота)</span>
+              <span class="badge badge-active">Авторасчёт в реальном времени</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">
+              Нажимайте кнопки в смартфоне слева — выполняйте задания, пополняйте через <b>Telegram Stars</b>, запускайте рекламу или переключайтесь на реферала 3-й линии, чтобы увидеть, как <b>автоматически</b> растут балансы партнёров и ваш сейф владельца!
+            </p>
+            <div class="kpi-grid" style="margin-bottom:0;">
+              <div class="step-box" style="margin-bottom:0;">
+                <div class="kpi-label">💰 ВАШ СЕЙФ ВЛАДЕЛЬЦА</div>
+                <div class="kpi-val text-green" id="liveOwnerVault">0.00 ₽</div>
+                <div class="kpi-sub">Чистая комиссия со всех операций</div>
+              </div>
+              <div class="step-box" style="margin-bottom:0;">
+                <div class="kpi-label">💵 БАЛАНС ВЫБРАННОГО ЮЗЕРА</div>
+                <div class="kpi-val text-accent" id="liveUserEarn">0.00 ₽</div>
+                <div class="kpi-sub">Рекламный счёт: <b id="liveUserAdv">0.00 ₽</b></div>
+              </div>
+              <div class="step-box" style="margin-bottom:0;">
+                <div class="kpi-label">🤝 ВЫПЛАЧЕНО В СЕТЬ ПАРТНЁРОВ</div>
+                <div class="kpi-val text-amber" id="livePartnerPaid">0.00 ₽</div>
+                <div class="kpi-sub">3 уровня автоначислений</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🛠 Как устроены 4 двигателя автозаработка внутри бота</div>
+            <div class="two-col" style="margin-bottom:0; gap:12px;">
+              <div class="step-box" style="margin-bottom:0;">
+                <b>1. Маржа с каждого задания (30%+)</b>
+                <p style="font-size:12.5px; color:var(--muted); margin-top:4px;">
+                  Рекламодатель платит 4.00 ₽ за подписчика → бот сам проверяет подписку через API и контролирует неотписку 7 дней → исполнитель получает 2.40 ₽, партнёры до 0.50 ₽, а <b>1.10+ ₽ мгновенно падают вам</b>.
+                </p>
+              </div>
+              <div class="step-box" style="margin-bottom:0;">
+                <b>2. Слоты ОП + Нативные показы (до 90% маржи)</b>
+                <p style="font-size:12.5px; color:var(--muted); margin-top:4px;">
+                  Внизу каждого ответа бота автоматически крутится оплаченная строка спонсора, а перед заданиями — шлюз Обязательной Подписки. Вы не платите исполнителям — почти весь бюджет идёт в ваш сейф!
+                </p>
+              </div>
+              <div class="step-box" style="margin-bottom:0;">
+                <b>3. Вирусное самопродвижение партнёрами</b>
+                <p style="font-size:12.5px; color:var(--muted); margin-top:4px;">
+                  Партнёры сами создают <b>денежные чеки</b> и раскидывают готовые посты в чатах, Reels и ТГ, потому что получают <b>до 25% с заданий и 10% с рекламных пополнений</b> на 3 уровня вглубь.
+                </p>
+              </div>
+              <div class="step-box" style="margin-bottom:0;">
+                <b>4. Telegram Stars (Авто) + СБП без ИП</b>
+                <p style="font-size:12.5px; color:var(--muted); margin-top:4px;">
+                  Звёзды Telegram принимаются на 100% автоматически 24/7 без ИП, а переводы по СБП приходят с уникальной суммой (например 504 ₽) и подтверждаются вами в 1 клик прямо в ТГ.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📜 Последние автоматические проводки в кассе</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Источник</th>
+                    <th>Оборот</th>
+                    <th>Исполнителю / Сети</th>
+                    <th>Ваша чистая прибыль</th>
+                  </tr>
+                </thead>
+                <tbody id="liveLedgerBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ВКЛАДКА 2: АДМИН-ПАНЕЛЬ ==================== -->
+    <section id="tab-admin" class="tab-panel">
+      <div class="kpi-grid">
+        <div class="card">
+          <div class="kpi-label">💰 ЧИСТАЯ ПРИБЫЛЬ ВЛАДЕЛЬЦА</div>
+          <div class="kpi-val text-green" id="admProfit">0.00 ₽</div>
+          <div class="kpi-sub">Уже за вычетом выплат юзерам и партнёрам</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">📈 ВАЛОВОЙ ОБОРОТ РЕКЛАМЫ</div>
+          <div class="kpi-val text-accent" id="admGross">0.00 ₽</div>
+          <div class="kpi-sub">На рекламных балансах ещё: <b id="admAdvBal">0 ₽</b></div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">👥 УЧАСТНИКОВ В БОТЕ</div>
+          <div class="kpi-val" id="admUsers">0</div>
+          <div class="kpi-sub">Из них VIP-Амбассадоров: <b id="admVips">0</b></div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">💳 ОЧЕРЕДЬ ЗАЯВОК СБП</div>
+          <div class="kpi-val text-amber" id="admPendingCnt">0</div>
+          <div class="kpi-sub">Подтверждение ввода и выплат в 1 клик</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">
+            <span>🏦 Заявки СБП (Пополнения и Выводы в 1 клик)</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID / Тип</th>
+                  <th>Пользователь</th>
+                  <th>Сумма / Детали</th>
+                  <th>Решение</th>
+                </tr>
+              </thead>
+              <tbody id="admPaymentsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🧮 Калькулятор вашего дохода в месяц</div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="field">
+              <label>Активных пользователей в боте: <b id="calcUsersLbl">1 500</b></label>
+              <input type="range" min="200" max="15000" step="100" value="1500" oninput="recalcIncome()" id="calcUsers" style="width:100%;" />
+            </div>
+            <div class="field">
+              <label>Новых рекламных заказов в день: <b id="calcAdsLbl">6</b></label>
+              <input type="range" min="1" max="40" step="1" value="6" oninput="recalcIncome()" id="calcAds" style="width:100%;" />
+            </div>
+          </div>
+          <div class="step-box" style="margin-bottom:0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="font-size:12px; color:var(--muted);">Прогноз чистой автоматической прибыли владельца:</div>
+              <div id="calcResult" style="font-size:26px; font-weight:800; color:#34d399;">~ 114 000 ₽ / мес</div>
+              <div style="font-size:12px; color:var(--muted);">С учётом комиссии с заданий (30%), слотов ОП и авто-показов под меню</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-danger btn-sm" onclick="clearDemoData()">🧹 Очистить демо-базу</button>
+              <button class="btn btn-outline btn-sm" onclick="restoreDemoData()">🔄 Вернуть демо</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📢 Управление всеми рекламными кампаниями (6 авто-форматов)</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Формат</th>
+                <th>Название и канал</th>
+                <th>Прогресс открутки</th>
+                <th>Ставка / Исполн.</th>
+                <th>Статус</th>
+                <th>Действие</th>
+              </tr>
+            </thead>
+            <tbody id="admCampaignsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ВКЛАДКА 3: ПАРТНЁРСКАЯ СЕТЬ ==================== -->
+    <section id="tab-partners" class="tab-panel">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">🌳 Ваша 3-уровневая партнёрская матрица</div>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">
+            Партнёры получают пассивный доход сразу по <b>двум линиям монетизации</b>: от выполненных заданий команды И пожизненный процент от каждого пополнения приглашённых рекламодателей!
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Ранг партнёра</th>
+                <th>Условие (1-я линия)</th>
+                <th>% с заданий (Ур. 1 / 2 / 3)</th>
+                <th>% с рекламы (Ур. 1 / 2 / 3)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>🥉 Старт</td><td>Сразу после регистрации</td><td><b>15% / 5% / 2%</b></td><td><b>10% / 3% / 1%</b></td></tr>
+              <tr><td>🥈 Актив</td><td>От 10 партнёров</td><td><b>18% / 6% / 2%</b></td><td><b>10% / 3% / 1%</b></td></tr>
+              <tr><td>🥇 Лидер</td><td>От 50 партнёров</td><td><b>22% / 7% / 3%</b></td><td><b>10% / 3% / 1%</b></td></tr>
+              <tr><td>💎 Амбассадор / VIP</td><td>200 реф. или VIP-статус</td><td><b class="text-green">25% / 8% / 4%</b> (+15% к заданиям)</td><td><b class="text-green">10% / 3% / 1%</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🎫 Генератор вирусных реферальных чеков</div>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">
+            Любой партнёр может выпустить денежный чек-ссылку. Каждый новичок, активировавший чек, получает стартовый бонус и <b>навсегда попадает в 1-ю линию создателя чека</b>!
+          </p>
+          <div class="form-grid" style="margin-bottom:12px;">
+            <div class="field">
+              <label>Сумма бонуса 1 человеку (₽)</label>
+              <input class="input" type="number" id="vchAmt" value="2" min="1" step="0.5" />
+            </div>
+            <div class="field">
+              <label>Количество активаций</label>
+              <input class="input" type="number" id="vchQty" value="15" min="1" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="createPartnerVoucherWeb()">🎫 Выпустить вирусный чек</button>
+          <div id="vchCreatedBox" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">🏆 Рейтинг топ-партнёров сети</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Партнёр</th>
+                  <th>Ранг</th>
+                  <th>1-я линия</th>
+                  <th>Доход с сети</th>
+                  <th>Общий заработок</th>
+                </tr>
+              </thead>
+              <tbody id="topPartnersBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📣 Готовые тексты для автопродвижения (копирование в 1 клик)</div>
+          <div id="promoTemplatesList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ВКЛАДКА 4: НАСТРОЙКИ ==================== -->
+    <section id="tab-settings" class="tab-panel">
+      <div class="card">
+        <div class="card-title">⚙️ Гибкая настройка экономики, комиссий и реквизитов СБП</div>
+        <div class="form-grid" style="margin-bottom:16px;">
+          <div class="field">
+            <label>Маржа владельца с заданий (%)</label>
+            <input class="input" id="set_platform_fee_pct" type="number" />
+          </div>
+          <div class="field">
+            <label>Комиссия на вывод заработка (%)</label>
+            <input class="input" id="set_withdraw_fee_pct" type="number" />
+          </div>
+          <div class="field">
+            <label>Курс 1 Telegram Star (в ₽)</label>
+            <input class="input" id="set_stars_rate_rub" type="number" step="0.05" />
+          </div>
+          <div class="field">
+            <label>Минимальная сумма вывода по СБП (₽)</label>
+            <input class="input" id="set_min_withdraw_rub" type="number" />
+          </div>
+          <div class="field">
+            <label>Цена статуса VIP-Амбассадор (₽)</label>
+            <input class="input" id="set_vip_price_rub" type="number" />
+          </div>
+          <div class="field">
+            <label>Мин. цена за 1 подписчика (₽)</label>
+            <input class="input" id="set_min_price_channel_sub" type="number" step="0.1" />
+          </div>
+          <div class="field">
+            <label>Партнёрка с заданий — 1 / 2 / 3 уровень (%)</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+              <input class="input" id="set_ref_task_l1" type="number" />
+              <input class="input" id="set_ref_task_l2" type="number" />
+              <input class="input" id="set_ref_task_l3" type="number" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Партнёрка с рекламы — 1 / 2 / 3 уровень (%)</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+              <input class="input" id="set_ref_adv_l1" type="number" />
+              <input class="input" id="set_ref_adv_l2" type="number" />
+              <input class="input" id="set_ref_adv_l3" type="number" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Ваш телефон СБП для приёма оплат</label>
+            <input class="input" id="set_sbp_phone" type="text" />
+          </div>
+          <div class="field">
+            <label>Ваш банк СБП</label>
+            <input class="input" id="set_sbp_bank" type="text" />
+          </div>
+          <div class="field">
+            <label>Имя получателя СБП</label>
+            <input class="input" id="set_sbp_recipient" type="text" />
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettingsWeb()">💾 Сохранить все тарифы и реквизиты</button>
+      </div>
+    </section>
+
+    <!-- ==================== ВКЛАДКА 5: ЗАПУСК В TELEGRAM ==================== -->
+    <section id="tab-launch" class="tab-panel">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">🔑 Мастер подключения к вашему Telegram-боту</div>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">
+            Вставьте данные ниже и нажмите <b>«Сохранить и подключить»</b>: бот сразу заработает в реальном Telegram И эти же настройки запишутся внутрь вашего готового ZIP-архива для бесплатного хостинга!
+          </p>
+          <div style="display:flex; flex-direction:column; gap:11px; margin-bottom:15px;">
+            <div class="field">
+              <label>1. Токен бота от @BotFather (BOT_TOKEN)</label>
+              <input class="input" id="env_bot_token" placeholder="Например: 7412345678:AAHxyz..." />
+            </div>
+            <div class="field">
+              <label>2. Ваш личный цифровой Telegram ID (узнать в @userinfobot)</label>
+              <input class="input" id="env_admin_ids" placeholder="Например: 512345678" />
+            </div>
+            <div class="field">
+              <label>3. Юзернейм вашего бота без @</label>
+              <input class="input" id="env_bot_username" placeholder="MyAdPartner_Bot" />
+            </div>
+            <div class="field">
+              <label>4. Ваш номер СБП, Банк и Имя для приёма пополнений</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+                <input class="input" id="env_sbp_phone" placeholder="+7 900 000-00-00" />
+                <input class="input" id="env_sbp_bank" placeholder="Т-Банк / Сбер" />
+                <input class="input" id="env_sbp_recipient" placeholder="Иван И." />
+              </div>
+            </div>
+            <div class="field">
+              <label>5. Канал-автовитрина новых заданий (необязательно, например @rabota_tasks)</label>
+              <input class="input" id="env_feed_channel" placeholder="@username_канала (добавьте бота в админы)" />
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="connectLiveBot()">🚀 Сохранить и запустить бота в Telegram</button>
+            <a href="/api/download-zip" class="btn btn-success">📦 Скачать готовый ZIP с моими настройками</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📘 Пошаговая инструкция запуска с нуля (0 ₽ вложений, с телефона или ПК)</div>
+          <div class="step-box">
+            <span class="step-num">1</span><b>Создайте бота за 1 минуту в Telegram</b>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px;">
+              Откройте в Telegram официальный <b>@BotFather</b> → отправьте команду <code>/newbot</code> → придумайте имя и юзернейм (заканчивается на <code>bot</code>). Скопируйте выданный длинный токен.
+            </p>
+          </div>
+          <div class="step-box">
+            <span class="step-num">2</span><b>Узнайте свой Telegram ID для админ-прав</b>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px;">
+              Напишите любое сообщение в <b>@userinfobot</b> — он пришлёт ваш цифровой <code>Id</code>. Вставьте токен, ваш ID и телефон СБП в форму слева, нажмите <b>«Сохранить»</b>, затем <b>«Скачать готовый ZIP»</b>.
+            </p>
+          </div>
+          <div class="step-box">
+            <span class="step-num">3</span><b>Бесплатный хостинг 24/7 (чтобы бот работал при выключенном телефоне)</b>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px;">
+              Зарегистрируйтесь на <b>Bothost.ru</b> (тариф <i>Free — 0 ₽ бессрочно</i>, РФ-сервис без зарубежных карт):<br/>
+              • Нажмите «Создать бота» → язык <b>Python</b>.<br/>
+              • Загрузите скачанный архив <code>tg_adpartner_bot_ready.zip</code>.<br/>
+              • Главный файл запуска укажите: <code>bot_only.py</code> (он потребляет всего ~45 МБ памяти специально под бесплатный тариф!) и файл зависимостей <code>requirements-bot.txt</code>.<br/>
+              • Нажмите <b>Запустить</b> — и отправьте <code>/admin</code> своему боту в Telegram!
+            </p>
+          </div>
+          <div class="step-box" style="margin-bottom:0;">
+            <span class="step-num">4</span><b>Как набрать первых 500 участников без бюджета на рекламу</b>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px;">
+              Создайте открытый ТГ-канал «Биржа быстрых заданий», пропишите его в настройках витрины (бот сам будет постить туда новые задания с кнопкой), выпустите вирусный чек на 20 активаций по 2 ₽ и раскидайте ссылку в чаты взаимопиара, подработки и в короткие ролики Reels/Shorts!
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let currentSimScreen = 'home';
+    let simState = null;
+    let dashState = null;
+
+    function showToast(msg, isError = false) {
+      const el = document.getElementById('globalToast');
+      el.textContent = msg;
+      el.className = isError ? 'toast error' : 'toast';
+      el.style.display = 'block';
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { el.style.display = 'none'; }, 5500);
+    }
+
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      if (btn) btn.classList.add('active');
+      refreshAll();
+    }
+
+    function getSimUserId() {
+      return parseInt(document.getElementById('simUserSelect').value || '777000111', 10);
+    }
+
+    async function onSimUserChange() {
+      currentSimScreen = 'home';
+      await refreshAll();
+    }
+
+    async function refreshAll() {
+      const uid = getSimUserId();
+      const [simRes, dashRes] = await Promise.all([
+        fetch(`/api/sim/state?user_id=${uid}`),
+        fetch('/api/dashboard')
+      ]);
+      simState = await simRes.json();
+      dashState = await dashRes.json();
+
+      updateTopStatus();
+      updateLiveMonitor();
+      renderBotScreen(currentSimScreen, true);
+      renderAdminPanel();
+      renderPartnersPanel();
+      populateSettingsForm();
+    }
+
+    function updateTopStatus() {
+      if (!dashState) return;
+      const lb = dashState.live_bot || {};
+      const badgeTxt = document.getElementById('botStatusText');
+      document.getElementById('tgBotTitle').textContent = '@' + (lb.username || 'AdPartnerPro_Bot');
+      if (lb.running) {
+        badgeTxt.textContent = `В сети Telegram: @${lb.username} (24/7 Авто)`;
+      } else {
+        badgeTxt.textContent = 'Симулятор и БД онлайн (вставьте токен во вкладке «Запуск»)';
+      }
+    }
+
+    function updateLiveMonitor() {
+      if (!dashState || !simState) return;
+      const s = dashState.summary;
+      const u = simState.user;
+      document.getElementById('liveOwnerVault').textContent = s.net_owner_profit.toFixed(2) + ' ₽';
+      document.getElementById('liveUserEarn').textContent = u.balance_earn.toFixed(2) + ' ₽';
+      document.getElementById('liveUserAdv').textContent = u.balance_adv.toFixed(2) + ' ₽';
+      document.getElementById('livePartnerPaid').textContent = s.partner_paid.toFixed(2) + ' ₽';
+
+      const names = {
+        task_margin: '📢 Маржа задания',
+        sponsor_op: '🔒 Слот Спонсора ОП',
+        native_ads: '🎯 Авто-показ под меню',
+        broadcast: '🚀 Авто-рассылка',
+        vip_sale: '💎 Продажа VIP',
+        withdraw_fee: '🏦 Комиссия вывода'
+      };
+      const tbody = document.getElementById('liveLedgerBody');
+      tbody.innerHTML = (dashState.recent_ledger || []).slice(0, 7).map(r => `
+        <tr>
+          <td><b>${names[r.event_type] || r.event_type}</b><div style="font-size:11px;color:var(--muted);">${escapeHtml(r.note)}</div></td>
+          <td>${r.gross_amount.toFixed(2)} ₽</td>
+          <td>${(r.worker_payout + r.partner_payout).toFixed(2)} ₽</td>
+          <td class="text-green"><b>+${r.owner_profit.toFixed(2)} ₽</b></td>
+        </tr>
+      `).join('');
+    }
+
+    function nativeAdHtml() {
+      if (!simState || !simState.native_ad) return '';
+      const ad = simState.native_ad;
+      return `<div class="tg-native-ad">💎 <b>Спонсор показа:</b> <a href="${escapeHtml(ad.target_url)}" target="_blank">${escapeHtml(ad.title)}</a></div>`;
+    }
+
+    function renderBotScreen(screen, skipSave) {
+      if (!skipSave) currentSimScreen = screen;
+      if (!simState) return;
+      const box = document.getElementById('tgScreen');
+      const u = simState.user;
+      const p = simState.partner;
+
+      if (screen === 'home') {
+        box.innerHTML = `
+          <div class="tg-bubble">
+            👋 <b>Привет, ${escapeHtml(u.full_name)}!</b><br/><br/>
+            Добро пожаловать в автоматизированную биржу продвижения и партнёрского дохода:<br/>
+            • 💰 Зарабатывайте на подписках и просмотрах<br/>
+            • 🚀 Запускайте авто-рекламу в 3 клика<br/>
+            • 🤝 Получайте до <b>25%</b> с 3 уровней партнёров!
+            ${nativeAdHtml()}
+          </div>
+          <div class="tg-inline-grid">
+            <button class="tg-ibtn green" onclick="renderBotScreen('earn')">💰 Перейти к заданиям (${simState.tasks.length} дост.)</button>
+            <button class="tg-ibtn" onclick="renderBotScreen('adv')">🚀 Запустить авто-рекламу</button>
+            <button class="tg-ibtn" onclick="renderBotScreen('partners')">🤝 Моя партнёрская сеть</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (screen === 'earn') {
+        if (simState.sponsors && simState.sponsors.length > 0) {
+          box.innerHTML = `
+            <div class="tg-bubble">
+              🔒 <b>Шлюз Обязательной Подписки (Спонсоры ОП)</b><br/><br/>
+              Перед открытием платных заданий подпишитесь на спонсоров ниже (это приносит владельцу бота <b>+${simState.sponsors[0].price_per_action.toFixed(2)} ₽</b> чистой прибыли с каждого юзера!):
+            </div>
+            <div class="tg-inline-grid">
+              ${simState.sponsors.map((sp, i) => `
+                <a class="tg-ibtn" style="text-decoration:none;" href="${escapeHtml(sp.target_url)}" target="_blank">📢 Спонсор #${i+1}: ${escapeHtml(sp.title)}</a>
+              `).join('')}
+              <button class="tg-ibtn green" onclick="simDo('op_verify')">✅ Проверить подписку и открыть задания</button>
+            </div>
+          `;
+          return;
+        }
+
+        if (!simState.tasks.length) {
+          box.innerHTML = `
+            <div class="tg-bubble">
+              🎉 Все текущие задания для этого аккаунта выполнены!<br/>
+              Переключитесь на другой тест-аккаунт сверху или создайте новую рекламную кампанию в разделе «🚀 Продвижение».
+              ${nativeAdHtml()}
+            </div>
+          `;
+          return;
+        }
+
+        const t = simState.tasks[0];
+        box.innerHTML = `
+          <div class="tg-bubble">
+            📌 <b>Задание #${t.id}: ${escapeHtml(t.title)}</b><br/><br/>
+            ${escapeHtml(t.description)}<br/><br/>
+            💵 Ваша выплата: <b>+${t.worker_reward.toFixed(2)} ₽</b><br/>
+            👥 Осталось мест: <b>${t.total_qty - t.completed_qty}</b><br/>
+            🛡 <i>Автопроверка подписки + контроль 7 дней</i>
+            ${nativeAdHtml()}
+          </div>
+          <div class="tg-inline-grid">
+            <a class="tg-ibtn" style="text-decoration:none;" href="${escapeHtml(t.target_url)}" target="_blank">🔗 1. Открыть канал / пост</a>
+            <button class="tg-ibtn green" onclick="simDo('complete_task', {campaign_id: ${t.id}})">✅ 2. Проверить и забрать +${t.worker_reward.toFixed(2)} ₽</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (screen === 'adv') {
+        box.innerHTML = `
+          <div class="tg-bubble">
+            🚀 <b>Кабинет автопродвижения 24/7</b><br/>
+            📣 Рекламный баланс: <code>${u.balance_adv.toFixed(2)} ₽</code><br/><br/>
+            Запустите новую кампанию прямо здесь (она мгновенно появится в выдаче бота!):
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:7px;">
+              <select id="simCampType" class="input">
+                <option value="channel_sub">📢 Подписчики в ТГ-канал (от 3.50 ₽)</option>
+                <option value="post_view">👁 Просмотры поста (от 1.20 ₽)</option>
+                <option value="sponsor_op">🔒 Слот ОП — Спонсор (от 6.00 ₽)</option>
+                <option value="native_ad">🎯 Авто-показы под меню (от 0.50 ₽)</option>
+              </select>
+              <input id="simCampTitle" class="input" placeholder="Заголовок (напр. Мой канал скидок)" value="Химчистка и Услуги Ставрополь" />
+              <input id="simCampUrl" class="input" placeholder="https://t.me/..." value="https://t.me/stavropol_clean_demo" />
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <input id="simCampPrice" class="input" type="number" step="0.5" value="4.0" placeholder="Цена ₽" />
+                <input id="simCampQty" class="input" type="number" value="25" placeholder="Кол-во" />
+              </div>
+            </div>
+          </div>
+          <div class="tg-inline-grid">
+            <button class="tg-ibtn green" onclick="submitSimCampaign()">🚀 Оплатить с баланса и запустить</button>
+            <div class="tg-inline-row">
+              <button class="tg-ibtn" onclick="simDo('stars_topup', {stars: 100})">⭐ +100 Stars (Авто)</button>
+              <button class="tg-ibtn" onclick="simDo('sbp_deposit', {amount: 500})">🏦 +500 ₽ по СБП</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (screen === 'partners') {
+        const c = p.counts || {l1:0,l2:0,l3:0,total:0};
+        const r = p.rates || {task_l1:15,task_l2:5,task_l3:2,adv_l1:10};
+        box.innerHTML = `
+          <div class="tg-bubble">
+            🤝 <b>Партнёрская сеть (3 уровня Авто)</b><br/>
+            🎖 Ранг: <b>${u.is_vip ? '💎 VIP-Амбассадор' : u.partner_rank}</b><br/>
+            💰 Заработано с сети: <b>${u.ref_earned.toFixed(2)} ₽</b><br/><br/>
+            • 1-я линия: <b>${c.l1} чел.</b> (${r.task_l1}% задания / ${r.adv_l1}% реклама)<br/>
+            • 2-я линия: <b>${c.l2} чел.</b> (${r.task_l2}% задания)<br/>
+            • 3-я линия: <b>${c.l3} чел.</b> (${r.task_l3}% задания)<br/><br/>
+            🔗 Реф-ссылка:<br/><code>${escapeHtml(p.ref_link || '')}</code>
+            ${nativeAdHtml()}
+          </div>
+          <div class="tg-inline-grid">
+            <button class="tg-ibtn" onclick="simDo('create_voucher', {amount_per_use: 2, max_uses: 10})">🎫 Создать вирусный чек (10 × 2 ₽)</button>
+            ${!u.is_vip ? `<button class="tg-ibtn green" onclick="simDo('buy_vip')">💎 Включить VIP-Амбассадор (${simState.settings.vip_price_rub} ₽)</button>` : ''}
+          </div>
+        `;
+        return;
+      }
+
+      if (screen === 'wallet') {
+        box.innerHTML = `
+          <div class="tg-bubble">
+            👤 <b>Личный кабинет и Кошелёк</b><br/>
+            🆔 ID: <code>${u.tg_id}</code><br/><br/>
+            💵 Доступно к выводу: <code>${u.balance_earn.toFixed(2)} ₽</code><br/>
+            📣 Рекламный баланс: <code>${u.balance_adv.toFixed(2)} ₽</code><br/>
+            ✅ Выполнено заданий: <b>${u.tasks_completed}</b>
+            ${nativeAdHtml()}
+          </div>
+          <div class="tg-inline-grid">
+            <div class="tg-inline-row">
+              <button class="tg-ibtn green" onclick="simDo('stars_topup', {stars: 200})">⭐ Оплатить 200 Stars</button>
+              <button class="tg-ibtn" onclick="simDo('sbp_deposit', {amount: 1000})">🏦 Внести 1000 ₽ СБП</button>
+            </div>
+            <button class="tg-ibtn" onclick="simDo('reinvest', {amount: 50})">🔄 50 ₽ на рекламу (+10% бонус)</button>
+            <button class="tg-ibtn" onclick="simDo('sbp_withdraw', {amount: 120, requisites: '+7 (918) 777-88-99, Т-Банк'})">💸 Заказать вывод 120 ₽ на СБП</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (screen === 'voucher') {
+        box.innerHTML = `
+          <div class="tg-bubble">
+            🎫 <b>Активация денежного чека партнёра</b><br/><br/>
+            Введите промо-чек (для теста уже активен чек <code>BONUS2026</code> на +3.00 ₽!):
+            <input id="simVoucherInput" class="input" style="margin-top:8px;" value="BONUS2026" />
+          </div>
+          <div class="tg-inline-grid">
+            <button class="tg-ibtn green" onclick="simDo('claim_voucher', {code: document.getElementById('simVoucherInput').value})">✅ Активировать чек</button>
+          </div>
+        `;
+      }
+    }
+
+    async function submitSimCampaign() {
+      const params = {
+        type: document.getElementById('simCampType').value,
+        title: document.getElementById('simCampTitle').value,
+        description: 'Автоматическое продвижение через AdPartner Pro',
+        target_url: document.getElementById('simCampUrl').value,
+        channel_username: '@stavropol_clean_demo',
+        price_per_action: parseFloat(document.getElementById('simCampPrice').value || '4'),
+        total_qty: parseInt(document.getElementById('simCampQty').value || '25', 10)
+      };
+      await simDo('create_campaign', params);
+    }
+
+    async function simDo(action, params = {}) {
+      const res = await fetch('/api/sim/action', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ user_id: getSimUserId(), action, params })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast(data.message || 'Успешно выполнено!');
+      } else {
+        showToast(data.error || 'Ошибка выполнения', true);
+      }
+      await refreshAll();
+    }
+
+    function renderAdminPanel() {
+      if (!dashState) return;
+      const s = dashState.summary;
+      document.getElementById('admProfit').textContent = s.net_owner_profit.toFixed(2) + ' ₽';
+      document.getElementById('admGross').textContent = s.gross_turnover.toFixed(2) + ' ₽';
+      document.getElementById('admAdvBal').textContent = s.total_user_adv_bal.toFixed(0) + ' ₽';
+      document.getElementById('admUsers').textContent = s.users_count;
+      document.getElementById('admVips').textContent = s.vip_count;
+
+      const pend = (dashState.payments || []).filter(p => p.status === 'pending');
+      document.getElementById('admPendingCnt').textContent = pend.length;
+
+      const payBody = document.getElementById('admPaymentsBody');
+      payBody.innerHTML = (dashState.payments || []).slice(0, 10).map(p => {
+        const isDep = p.direction === 'deposit';
+        const badge = p.status === 'pending'
+          ? '<span class="badge badge-pending">Ожидает</span>'
+          : (p.status === 'approved' ? '<span class="badge badge-active">Выполнено</span>' : '<span class="badge badge-paused">Отклонено</span>');
+        const actions = p.status === 'pending'
+          ? `<button class="btn btn-success btn-sm" onclick="resolvePay(${p.id}, true)">✅ Подтвердить</button>
+             <button class="btn btn-danger btn-sm" onclick="resolvePay(${p.id}, false)">✕</button>`
+          : badge;
+        return `
+          <tr>
+            <td><b>#${p.id}</b> ${isDep ? '📥 Ввод' : '📤 Вывод'} (${p.method.toUpperCase()})</td>
+            <td>${escapeHtml(p.full_name || 'ID ' + p.user_id)}</td>
+            <td><b>${p.net_rub.toFixed(2)} ₽</b><div style="font-size:11px;color:var(--muted);">${escapeHtml(p.requisites)}</div></td>
+            <td style="white-space:nowrap;">${actions}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const typeNames = {
+        channel_sub: '📢 Подписчики',
+        post_view: '👁 Просмотры',
+        bot_start: '🤖 Бот / Ссылка',
+        sponsor_op: '🔒 Спонсор ОП',
+        native_ad: '🎯 Авто-показ',
+        broadcast: '🚀 Рассылка'
+      };
+      const campBody = document.getElementById('admCampaignsBody');
+      campBody.innerHTML = (dashState.campaigns || []).map(c => {
+        const pct = Math.min(100, Math.round((c.completed_qty / Math.max(1, c.total_qty)) * 100));
+        const stBadge = c.status === 'active'
+          ? '<span class="badge badge-active">Активна</span>'
+          : `<span class="badge badge-paused">${c.status}</span>`;
+        return `
+          <tr>
+            <td>#${c.id}</td>
+            <td>${typeNames[c.type] || c.type}</td>
+            <td><b>${escapeHtml(c.title)}</b><div style="font-size:11px;color:var(--muted);">${escapeHtml(c.target_url)}</div></td>
+            <td style="min-width:140px;">
+              ${c.completed_qty} / ${c.total_qty} (${pct}%)
+              <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;"></div></div>
+            </td>
+            <td>${c.price_per_action.toFixed(2)} ₽ / ${c.worker_reward.toFixed(2)} ₽</td>
+            <td>${stBadge}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" onclick="toggleCamp(${c.id})">${c.status === 'active' ? '⏸ Пауза' : '▶️ Старт'}</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      recalcIncome();
+    }
+
+    function recalcIncome() {
+      const users = parseInt(document.getElementById('calcUsers').value, 10);
+      const adsPerDay = parseInt(document.getElementById('calcAds').value, 10);
+      document.getElementById('calcUsersLbl').textContent = users.toLocaleString('ru-RU');
+      document.getElementById('calcAdsLbl').textContent = adsPerDay;
+      // Средний чек рекламодателя ~900 ₽ (маржа 35%) + доход со слотов ОП и нативных показов от активной базы
+      const adMarginDaily = adsPerDay * 900 * 0.35;
+      const opAndNativeDaily = users * 1.25;
+      const monthly = Math.round((adMarginDaily + opAndNativeDaily) * 30 / 500) * 500;
+      document.getElementById('calcResult').textContent = `~ ${monthly.toLocaleString('ru-RU')} ₽ / мес`;
+    }
+
+    async function resolvePay(paymentId, approve) {
+      const res = await fetch('/api/admin/resolve-payment', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ payment_id: paymentId, approve })
+      });
+      const data = await res.json();
+      if (data.ok) showToast(`Заявка #${paymentId} успешно обновлена!`);
+      else showToast(data.error || 'Ошибка', true);
+      await refreshAll();
+    }
+
+    async function toggleCamp(campaignId) {
+      await fetch('/api/admin/toggle-campaign', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ campaign_id: campaignId })
+      });
+      await refreshAll();
+    }
+
+    function renderPartnersPanel() {
+      if (!dashState || !simState) return;
+      const tbody = document.getElementById('topPartnersBody');
+      tbody.innerHTML = (dashState.top_users || []).slice(0, 8).map(u => `
+        <tr>
+          <td><b>${escapeHtml(u.full_name)}</b> <span style="color:var(--muted);font-size:11px;">@${escapeHtml(u.username || 'id'+u.tg_id)}</span></td>
+          <td>${u.is_vip ? '💎 VIP-Амбассадор' : escapeHtml(u.partner_rank)}</td>
+          <td>${u.referrals_l1} чел.</td>
+          <td class="text-green"><b>${u.ref_earned.toFixed(2)} ₽</b></td>
+          <td>${u.total_earned.toFixed(2)} ₽</td>
+        </tr>
+      `).join('');
+
+      const tpls = (simState.partner && simState.partner.promo_templates) || [];
+      document.getElementById('promoTemplatesList').innerHTML = tpls.map((t, idx) => `
+        <div class="step-box" style="margin-bottom:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <b style="font-size:12.5px; color:#38bdf8;">${escapeHtml(t.target)}</b>
+            <button class="btn btn-outline btn-sm" onclick="copyText(${idx})">📋 Скопировать пост</button>
+          </div>
+          <div id="promoTxt_${idx}" style="font-size:12.5px; white-space:pre-line; color:#e2e8f0;">${escapeHtml(t.text)}</div>
+        </div>
+      `).join('');
+    }
+
+    function copyText(idx) {
+      const txt = document.getElementById('promoTxt_' + idx).innerText;
+      navigator.clipboard.writeText(txt);
+      showToast('Готовый рекламный пост с вашей ссылкой скопирован в буфер обмена!');
+    }
+
+    async function createPartnerVoucherWeb() {
+      const amt = parseFloat(document.getElementById('vchAmt').value || '2');
+      const qty = parseInt(document.getElementById('vchQty').value || '10', 10);
+      const res = await fetch('/api/sim/action', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ user_id: getSimUserId(), action: 'create_voucher', params: { amount_per_use: amt, max_uses: qty } })
+      });
+      const data = await res.json();
+      if (data.ok && data.voucher) {
+        document.getElementById('vchCreatedBox').innerHTML = `
+          <div class="step-box" style="border-color:#10b981;">
+            ✅ <b>Чек создан!</b> Код: <code>${data.voucher.code}</code><br/>
+            Вирусная ссылка: <code style="color:#38bdf8;">${data.voucher.deep_link}</code>
+          </div>
+        `;
+        showToast(data.message);
+        await refreshAll();
+      } else {
+        showToast(data.error || 'Недостаточно средств на балансе выбранного аккаунта', true);
+      }
+    }
+
+    const SETTING_KEYS = [
+      'platform_fee_pct', 'withdraw_fee_pct', 'stars_rate_rub', 'min_withdraw_rub',
+      'vip_price_rub', 'min_price_channel_sub', 'ref_task_l1', 'ref_task_l2', 'ref_task_l3',
+      'ref_adv_l1', 'ref_adv_l2', 'ref_adv_l3', 'sbp_phone', 'sbp_bank', 'sbp_recipient'
+    ];
+
+    function populateSettingsForm() {
+      if (!dashState || window._formsInitialized) return;
+      const s = dashState.settings || {};
+      SETTING_KEYS.forEach(k => {
+        const el = document.getElementById('set_' + k);
+        if (el && s[k] !== undefined) el.value = s[k];
+      });
+      const env = dashState.env || {};
+      document.getElementById('env_admin_ids').value = env.admin_ids || '';
+      document.getElementById('env_bot_username').value = env.bot_username || '';
+      document.getElementById('env_sbp_phone').value = env.sbp_phone || '';
+      document.getElementById('env_sbp_bank').value = env.sbp_bank || '';
+      document.getElementById('env_sbp_recipient').value = env.sbp_recipient || '';
+      document.getElementById('env_feed_channel').value = env.public_feed_channel || '';
+      window._formsInitialized = true;
+    }
+
+    async function saveSettingsWeb() {
+      const payload = {};
+      SETTING_KEYS.forEach(k => {
+        const el = document.getElementById('set_' + k);
+        if (el) payload[k] = el.value;
+      });
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ settings: payload })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('✅ Все проценты, цены и реквизиты СБП сохранены в базу бота!');
+        window._formsInitialized = false;
+        await refreshAll();
+      }
+    }
+
+    async function connectLiveBot() {
+      const payload = {
+        bot_token: document.getElementById('env_bot_token').value,
+        admin_ids: document.getElementById('env_admin_ids').value,
+        bot_username: document.getElementById('env_bot_username').value,
+        sbp_phone: document.getElementById('env_sbp_phone').value,
+        sbp_bank: document.getElementById('env_sbp_bank').value,
+        sbp_recipient: document.getElementById('env_sbp_recipient').value,
+        public_feed_channel: document.getElementById('env_feed_channel').value
+      };
+      const res = await fetch('/api/admin/setup-bot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast(data.message || 'Настройки успешно сохранены!');
+        window._formsInitialized = false;
+        await refreshAll();
+      } else {
+        showToast(data.error || 'Ошибка проверки токена', true);
+      }
+    }
+
+    async function clearDemoData() {
+      await fetch('/api/admin/clear-demo', { method: 'POST' });
+      showToast('🧹 Демо-данные очищены! База чистая и готова к реальным клиентам.');
+      await refreshAll();
+    }
+
+    async function restoreDemoData() {
+      await fetch('/api/admin/restore-demo', { method: 'POST' });
+      showToast('🔄 Демонстрационные кампании и партнёры восстановлены!');
+      await refreshAll();
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    refreshAll();
+  </script>
+</body>
+</html>

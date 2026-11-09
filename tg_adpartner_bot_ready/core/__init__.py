@@ -1,1 +1,0 @@
-# AdPartner Pro Core Package
